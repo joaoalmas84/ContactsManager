@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:code/data/models/meeting_point.dart';
 
 class Contact {
   String nome;
@@ -6,7 +7,7 @@ class Contact {
   String telefone;
   DateTime? dataNascimento;
   File? imagem;
-
+  List<MeetingPoint>? encontros;
 
   Contact({
     required this.nome,
@@ -14,6 +15,7 @@ class Contact {
     required this.telefone,
     this.dataNascimento,
     this.imagem,
+    this.encontros
   });
 
   Map<String, dynamic> toJson() {
@@ -23,10 +25,14 @@ class Contact {
       'telefone': telefone,
       'dataNascimento': dataNascimento?.toIso8601String(),
       'imagem': imagem?.path,
+      'encontros': encontros?.map((encontro) => encontro.toJson()).toList(),
     };
   }
 
   factory Contact.fromJson(Map<String, dynamic> json) {
+    var encontrosJson = json['encontros'] as List?;
+    List<MeetingPoint>? encontrosList = encontrosJson?.map((item) => MeetingPoint.fromJson(item)).toList();
+
     return Contact(
       nome: json['nome'],
       email: json['email'],
@@ -37,11 +43,7 @@ class Contact {
       imagem: json['imagem'] != null && json['imagem'].isNotEmpty
           ? File(json['imagem'])
           : null,
+      encontros: encontrosList,
     );
-  }
-
-  @override
-  String toString() {
-    return 'Contact(nome: $nome, email: $email, telefone: $telefone, dataNascimento: ${dataNascimento?.toIso8601String() ?? "N/A"}, imagem: ${imagem?.path ?? "N/A"})';
   }
 }

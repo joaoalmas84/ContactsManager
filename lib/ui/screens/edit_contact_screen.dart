@@ -1,7 +1,9 @@
+import 'package:code/utils/utils_date.dart';
+import 'package:code/utils/utils_image.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
-import '../../data/contact.dart';
+import '../../data/models/contact.dart';
 import '../widgets/footer.dart';
 
 class EditContactScreen extends StatefulWidget {
@@ -26,7 +28,6 @@ class _EditContactScreenState extends State<EditContactScreen> {
     super.didChangeDependencies();
     contact = ModalRoute.of(context)?.settings.arguments as Contact;
 
-    // Initialize controllers with the current contact details
     _nameController = TextEditingController(text: contact.nome);
     _emailController = TextEditingController(text: contact.email);
     _phoneController = TextEditingController(text: contact.telefone);
@@ -47,23 +48,6 @@ class _EditContactScreenState extends State<EditContactScreen> {
     super.dispose();
   }
 
-  Future<void> _pickImage() async {
-    final ImagePicker picker = ImagePicker();
-    final XFile? pickedFile = await picker.pickImage(source: ImageSource.gallery);
-
-    if (pickedFile != null) {
-      setState(() {
-        contact.imagem = File(pickedFile.path);
-      });
-    }
-  }
-
-  String _formatDate(DateTime date) {
-    return "${date.day.toString().padLeft(2, '0')}/"
-        "${date.month.toString().padLeft(2, '0')}/"
-        "${date.year}";
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -72,7 +56,7 @@ class _EditContactScreenState extends State<EditContactScreen> {
             .of(context)
             .colorScheme
             .inversePrimary,
-        title: Text('Editar Contato'),
+        title: Text('Editar Contacto'),
       ),
       body: SingleChildScrollView(
         child: Padding(
@@ -81,7 +65,6 @@ class _EditContactScreenState extends State<EditContactScreen> {
             key: _formKey,
             child: Column(
               children: [
-                // Name Field
                 TextFormField(
                   controller: _nameController,
                   decoration: InputDecoration(labelText: 'Nome'),
@@ -95,7 +78,6 @@ class _EditContactScreenState extends State<EditContactScreen> {
                   onSaved: (value) => contact.nome = value!,
                 ),
 
-                // Email Field
                 TextFormField(
                   controller: _emailController,
                   decoration: InputDecoration(labelText: 'Email'),
@@ -112,7 +94,6 @@ class _EditContactScreenState extends State<EditContactScreen> {
                   onSaved: (value) => contact.email = value!,
                 ),
 
-                // Phone Field
                 TextFormField(
                   controller: _phoneController,
                   decoration: InputDecoration(labelText: 'Telefone'),
@@ -133,14 +114,7 @@ class _EditContactScreenState extends State<EditContactScreen> {
                   controller: _birthdateController,
                   decoration: InputDecoration(labelText: 'Data de Nascimento'),
                   readOnly: true, // Makes it non-editable directly
-                  validator: (value) {
-                    if (contact.dataNascimento == null) {
-                      return 'Por favor selecione uma data';
-                    }
-                    return null;
-                  },
                   onTap: () async {
-                    // Show date picker when tapped
                     DateTime? pickedDate = await showDatePicker(
                       context: context,
                       initialDate: contact.dataNascimento ?? DateTime.now(),
@@ -150,7 +124,7 @@ class _EditContactScreenState extends State<EditContactScreen> {
                     if (pickedDate != null && pickedDate != contact.dataNascimento) {
                       setState(() {
                         contact.dataNascimento = pickedDate;
-                        _birthdateController.text = _formatDate(pickedDate);
+                        _birthdateController.text = UtilsDate.formatDate(pickedDate);
                       });
                     }
                   },
@@ -158,13 +132,18 @@ class _EditContactScreenState extends State<EditContactScreen> {
 
                 SizedBox(height: 16),
 
-                // Image Pick Button
                 ElevatedButton(
-                  onPressed: _pickImage,
-                  child: Text(contact.imagem == null ? 'Escolher Imagem' : 'Imagem Selecionada'),
+                  onPressed: () async {
+                    final pickedImage = await UtilsImage.pickImage(context);
+                    if (pickedImage != null) {
+                      setState(() {
+                        contact.imagem = pickedImage;
+                      });
+                    }
+                  },
+                  child: Text(contact.imagem == null ? 'Escolher Imagem' : 'Alterar Imagem'),
                 ),
 
-                // Display Image if available
                 if (contact.imagem != null)
                   ClipOval(
                     child: Image.file(
@@ -196,3 +175,4 @@ class _EditContactScreenState extends State<EditContactScreen> {
     );
   }
 }
+

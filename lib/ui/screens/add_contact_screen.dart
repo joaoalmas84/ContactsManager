@@ -1,9 +1,7 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
-import '../../data/contact.dart';
-import '../../data/contact_storage.dart';
+import '../../data/models/contact.dart';
+import '../../utils/utils_date.dart';
+import '../../utils/utils_image.dart';
 import '../widgets/footer.dart';
 
 class AddContactScreen extends StatefulWidget {
@@ -16,9 +14,8 @@ class AddContactScreen extends StatefulWidget {
 }
 
 class _AddContactScreenState extends State<AddContactScreen> {
-  late final List<Contact> _contacts = ModalRoute.of(context)?.settings.arguments as List<Contact>;
-
   late Contact contact;
+
   final _formKey = GlobalKey<FormState>();
 
   @override
@@ -27,28 +24,9 @@ class _AddContactScreenState extends State<AddContactScreen> {
     contact = Contact(nome: '', email: '', telefone: '');
   }
 
-  Future<void> _pickImage() async {
-    final ImagePicker picker = ImagePicker();
-    final XFile? pickedFile = await picker.pickImage(source: ImageSource.gallery);
-
-    if (pickedFile != null) {
-      setState(() {
-        contact.imagem = File(pickedFile.path);
-      });
-    }
-  }
-
-  String _formatDate(DateTime date) {
-    return "${date.day.toString().padLeft(2, '0')}/"
-        "${date.month.toString().padLeft(2, '0')}/"
-        "${date.year}";
-  }
-
-  Future<void> _addContact(Contact contact) async {
-    setState(() {
-      _contacts.add(contact);
-    });
-    await ContactStorage.saveContacts(_contacts);
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
   }
 
   @override
@@ -65,7 +43,6 @@ class _AddContactScreenState extends State<AddContactScreen> {
             key: _formKey,
             child: Column(
               children: [
-                // Name Field
                 TextFormField(
                   decoration: InputDecoration(labelText: 'Nome'),
                   keyboardType: TextInputType.text,
@@ -77,8 +54,6 @@ class _AddContactScreenState extends State<AddContactScreen> {
                   },
                   onSaved: (value) => contact.nome = value!,
                 ),
-
-                // Email Field
                 TextFormField(
                   decoration: InputDecoration(labelText: 'Email'),
                   keyboardType: TextInputType.emailAddress,
@@ -93,8 +68,6 @@ class _AddContactScreenState extends State<AddContactScreen> {
                   },
                   onSaved: (value) => contact.email = value!,
                 ),
-
-                // Phone Field
                 TextFormField(
                   decoration: InputDecoration(labelText: 'Telefone'),
                   keyboardType: TextInputType.phone,
@@ -106,18 +79,14 @@ class _AddContactScreenState extends State<AddContactScreen> {
                   },
                   onSaved: (value) => contact.telefone = value!,
                 ),
-
                 SizedBox(height: 16),
-
-                // Birthdate Field (DataNascimento)
                 TextFormField(
                   decoration: InputDecoration(labelText: 'Data de Nascimento'),
-                  readOnly: true, // Makes it non-editable directly
+                  readOnly: true,
                   controller: TextEditingController(
-                    text: contact.dataNascimento != null ? _formatDate(contact.dataNascimento!) : '',
+                    text: contact.dataNascimento != null ? UtilsDate.formatDate(contact.dataNascimento!) : '',
                   ),
                   onTap: () async {
-                    // Show date picker when tapped
                     DateTime? pickedDate = await showDatePicker(
                       context: context,
                       initialDate: contact.dataNascimento ?? DateTime.now(),
@@ -131,16 +100,18 @@ class _AddContactScreenState extends State<AddContactScreen> {
                     }
                   },
                 ),
-
                 SizedBox(height: 16),
-
-                // Image Pick Button
                 ElevatedButton(
-                  onPressed: _pickImage,
+                  onPressed: () async {
+                    final pickedImage = await UtilsImage.pickImage(context);
+                    if (pickedImage != null) {
+                      setState(() {
+                        contact.imagem = pickedImage;
+                      });
+                    }
+                  },
                   child: Text(contact.imagem == null ? 'Escolher Imagem' : 'Imagem Selecionada'),
                 ),
-
-                // Display Image if available
                 if (contact.imagem != null)
                   ClipOval(
                     child: Image.file(
@@ -150,16 +121,12 @@ class _AddContactScreenState extends State<AddContactScreen> {
                       fit: BoxFit.cover,
                     ),
                   ),
-
                 SizedBox(height: 16),
-
-                // Save Button
                 ElevatedButton(
                   onPressed: () async {
                     if (_formKey.currentState!.validate()) {
                       _formKey.currentState!.save();
-                      _addContact(contact);
-                      Navigator.of(context).pop(_contacts);
+                      Navigator.pop(context, contact); // Return the new contact
                     }
                   },
                   child: Text('Guardar'),

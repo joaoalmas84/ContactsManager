@@ -38,6 +38,7 @@ class _MainScreenState extends State<MainScreen> {
               ),
               const SizedBox(height: 20),
               MouseRegion(
+
                 cursor: SystemMouseCursors.click,
                 child: ElevatedButton(
                   onPressed: () {
@@ -47,12 +48,14 @@ class _MainScreenState extends State<MainScreen> {
                       ),
                     );
                   },
+
                   child: const Text(
                     'Começar',
                     style: TextStyle(
                       fontSize: 25,
                     ),
                   ),
+
                 ),
               ),
               const SizedBox(height: 20),
