@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:code/ui/screens/add_contact_screen.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -7,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../../data/contact.dart';
 import '../../data/contact_storage.dart';
 import '../widgets/footer.dart';
+import 'contact_screen.dart';
 
 class ContactListScreen extends StatefulWidget {
   const ContactListScreen({super.key});
@@ -44,59 +43,87 @@ class _ContactListScreenState extends State<ContactListScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: Text('Contactos'),
+        backgroundColor: Theme
+            .of(context)
+            .colorScheme
+            .inversePrimary,
+        title: const Text('Contactos'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.add),
+            tooltip: 'Add Contact',
+            onPressed: () async {
+              final updatedContacts = await Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => AddContactScreen(),
+                  settings: RouteSettings(
+                    arguments: contacts,
+                  ),
+                ),
+              );
+              if (updatedContacts != null) {
+                setState(() {
+                  contacts = List<Contact>.from(updatedContacts);
+                });
+              }
+            },
+          ),
+          SizedBox(width: 35.0),  // Horizontal space
+        ],
       ),
-      body: SingleChildScrollView(  // Wrap the entire body with SingleChildScrollView
-        child: Column(
-          children: [
-            // The ListView.builder that already provides scroll functionality
-            SizedBox(
-              height: MediaQuery.of(context).size.height * 0.7,
-              child: ListView.builder(
-                itemCount: contacts.length,
-                itemBuilder: (context, index) {
-                  Contact contact = contacts[index];
-                  return ListTile(
-                    leading: contact.imagem != null
-                        ? CircleAvatar(
-                      backgroundImage: FileImage(File(contact.imagem as String)), // Use local image file
-                    )
-                        : CircleAvatar(
-                      child: Text(contact.nome.isNotEmpty ? contact.nome[0] : '?'), // Use first letter of name as fallback
-                    ),
-                    title: Text(contact.nome),
-                    subtitle: Text(contact.telefone),
-                    trailing: IconButton(
-                      icon: Icon(Icons.delete),
-                      onPressed: () => _deleteContact(index),
-                    ),
-                  );
-                },
-              ),
+      body: Column(
+        children: [
+          Expanded(
+            child: ListView.builder(
+              padding: const EdgeInsets.only(bottom: 16.0),
+              itemCount: contacts.length,
+              itemBuilder: (context, index) {
+                Contact contact = contacts[index];
+                return ListTile(
+                  leading: contact.imagem != null
+                      ? CircleAvatar(
+                    backgroundImage: FileImage(contact.imagem!),
+                  )
+                      : CircleAvatar(
+                    child: Text(contact.nome.isNotEmpty
+                        ? contact.nome[0].toUpperCase()
+                        : '?'),
+                  ),
+                  title: Text(contact.nome),
+                  subtitle: Text(contact.telefone),
+                  trailing: IconButton(
+                    icon: const Icon(Icons.delete),
+                    onPressed: () => _deleteContact(index),
+                  ),
+                  onTap: () async {
+                    // Navigate to the ContactScreen
+                    final updatedContact = await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ContactScreen(),
+                        settings: RouteSettings(
+                          arguments: contact, // Pass the contact here
+                        ),
+                      ),
+                    );
+
+                    // If the contact was updated, update the list
+                    if (updatedContact != null && updatedContact is Contact) {
+                      setState(() {
+                        contacts[index] =
+                            updatedContact; // Update the contact in the list
+                      });
+                      await ContactStorage.saveContacts(
+                          contacts); // Save updated list
+                    }
+                  },
+                );
+              },
             ),
-          ],
-        ),
+          ),
+        ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          final updatedContacts = await Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (context) => AddContactScreen(),
-              settings: RouteSettings(
-                arguments: contacts,
-              ),
-            ),
-          );
-          if (updatedContacts != null) {
-            setState(() {
-              contacts = List<Contact>.from(updatedContacts);
-            });
-          }
-        },
-        child: Icon(Icons.add),
-      ),
-      bottomNavigationBar: Footer(), // Add Footer widget here
+      bottomNavigationBar: Footer(),
     );
   }
 }

@@ -1,30 +1,50 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 import '../../data/contact.dart';
-import '../../data/contact_storage.dart';
 import '../widgets/footer.dart';
 
-class AddContactScreen extends StatefulWidget {
-  const AddContactScreen({super.key});
+class EditContactScreen extends StatefulWidget {
+  const EditContactScreen({super.key});
 
-  static const String routName = "/AddContactScreen";
+  static const String routName = "/EditContactScreen";
 
   @override
-  State<StatefulWidget> createState() => _AddContactScreenState();
+  State<EditContactScreen> createState() => _EditContactScreenState();
 }
 
-class _AddContactScreenState extends State<AddContactScreen> {
-  late final List<Contact> _contacts = ModalRoute.of(context)?.settings.arguments as List<Contact>;
-
+class _EditContactScreenState extends State<EditContactScreen> {
   late Contact contact;
   final _formKey = GlobalKey<FormState>();
+  late TextEditingController _nameController;
+  late TextEditingController _emailController;
+  late TextEditingController _phoneController;
+  late TextEditingController _birthdateController;
 
   @override
-  void initState() {
-    super.initState();
-    contact = Contact(nome: '', email: '', telefone: '');
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    contact = ModalRoute.of(context)?.settings.arguments as Contact;
+
+    // Initialize controllers with the current contact details
+    _nameController = TextEditingController(text: contact.nome);
+    _emailController = TextEditingController(text: contact.email);
+    _phoneController = TextEditingController(text: contact.telefone);
+    _birthdateController = TextEditingController(
+        text: contact.dataNascimento != null
+            ? "${contact.dataNascimento!.day.toString().padLeft(2, '0')}/"
+            "${contact.dataNascimento!.month.toString().padLeft(2, '0')}/"
+            "${contact.dataNascimento!.year}"
+            : "");
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _emailController.dispose();
+    _phoneController.dispose();
+    _birthdateController.dispose();
+    super.dispose();
   }
 
   Future<void> _pickImage() async {
@@ -44,19 +64,15 @@ class _AddContactScreenState extends State<AddContactScreen> {
         "${date.year}";
   }
 
-  Future<void> _addContact(Contact contact) async {
-    setState(() {
-      _contacts.add(contact);
-    });
-    await ContactStorage.saveContacts(_contacts);
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: Text('Novo Contacto'),
+        backgroundColor: Theme
+            .of(context)
+            .colorScheme
+            .inversePrimary,
+        title: Text('Editar Contato'),
       ),
       body: SingleChildScrollView(
         child: Padding(
@@ -67,6 +83,7 @@ class _AddContactScreenState extends State<AddContactScreen> {
               children: [
                 // Name Field
                 TextFormField(
+                  controller: _nameController,
                   decoration: InputDecoration(labelText: 'Nome'),
                   keyboardType: TextInputType.text,
                   validator: (value) {
@@ -80,6 +97,7 @@ class _AddContactScreenState extends State<AddContactScreen> {
 
                 // Email Field
                 TextFormField(
+                  controller: _emailController,
                   decoration: InputDecoration(labelText: 'Email'),
                   keyboardType: TextInputType.emailAddress,
                   validator: (value) {
@@ -96,6 +114,7 @@ class _AddContactScreenState extends State<AddContactScreen> {
 
                 // Phone Field
                 TextFormField(
+                  controller: _phoneController,
                   decoration: InputDecoration(labelText: 'Telefone'),
                   keyboardType: TextInputType.phone,
                   validator: (value) {
@@ -111,11 +130,15 @@ class _AddContactScreenState extends State<AddContactScreen> {
 
                 // Birthdate Field (DataNascimento)
                 TextFormField(
+                  controller: _birthdateController,
                   decoration: InputDecoration(labelText: 'Data de Nascimento'),
                   readOnly: true, // Makes it non-editable directly
-                  controller: TextEditingController(
-                    text: contact.dataNascimento != null ? _formatDate(contact.dataNascimento!) : '',
-                  ),
+                  validator: (value) {
+                    if (contact.dataNascimento == null) {
+                      return 'Por favor selecione uma data';
+                    }
+                    return null;
+                  },
                   onTap: () async {
                     // Show date picker when tapped
                     DateTime? pickedDate = await showDatePicker(
@@ -127,6 +150,7 @@ class _AddContactScreenState extends State<AddContactScreen> {
                     if (pickedDate != null && pickedDate != contact.dataNascimento) {
                       setState(() {
                         contact.dataNascimento = pickedDate;
+                        _birthdateController.text = _formatDate(pickedDate);
                       });
                     }
                   },
@@ -155,11 +179,10 @@ class _AddContactScreenState extends State<AddContactScreen> {
 
                 // Save Button
                 ElevatedButton(
-                  onPressed: () async {
+                  onPressed: () {
                     if (_formKey.currentState!.validate()) {
                       _formKey.currentState!.save();
-                      _addContact(contact);
-                      Navigator.of(context).pop(_contacts);
+                      Navigator.pop(context, contact);
                     }
                   },
                   child: Text('Guardar'),

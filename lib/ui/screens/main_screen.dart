@@ -13,13 +13,6 @@ class MainScreen extends StatefulWidget {
 }
 
 class _MainScreenState extends State<MainScreen> {
-  int _counter = 0;
-
-  void _incrementCounter() {
-    setState(() {
-      _counter++;
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -34,6 +27,7 @@ class _MainScreenState extends State<MainScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
+              const SizedBox(height: 40),
               const Text(
                 'Gestor de Contactos',
                 style: TextStyle(
@@ -53,27 +47,21 @@ class _MainScreenState extends State<MainScreen> {
                       ),
                     );
                   },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue, // Button color
-                    padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
-                  ),
                   child: const Text(
                     'Começar',
                     style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
+                      fontSize: 25,
                     ),
                   ),
                 ),
               ),
               const SizedBox(height: 20),
-              FlutterLogo(size: 200),
+              FlutterLogo(size: 300),
             ],
           ),
         ),
       ),
-      bottomNavigationBar: Footer(), // Add Footer widget here
+      bottomNavigationBar: Footer(),
     );
   }
 }
