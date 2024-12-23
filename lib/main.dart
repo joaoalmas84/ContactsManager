@@ -1,3 +1,4 @@
+import 'package:code/ui/screens/add_meeting_point_screen.dart';
 import 'package:code/ui/screens/contact_list_screen.dart';
 import 'package:code/ui/screens/contact_screen.dart';
 import 'package:code/ui/screens/edit_contact_screen.dart';
@@ -35,7 +36,8 @@ class MyApp extends StatelessWidget {
           MainScreen.routName : (_) =>  const MainScreen(),
           ContactListScreen.routName : (_) =>  const ContactListScreen(),
           ContactScreen.routName : (_) => const ContactScreen(),
-          EditContactScreen.routName : (_) => const EditContactScreen()
+          EditContactScreen.routName : (_) => const EditContactScreen(),
+          AddMeetingPointScreen.routName : (_) => const AddMeetingPointScreen()
         }
     );
   }

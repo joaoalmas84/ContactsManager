@@ -1,8 +1,6 @@
 import 'package:code/utils/utils_date.dart';
 import 'package:code/utils/utils_image.dart';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
-import 'dart:io';
 import '../../data/models/contact.dart';
 import '../widgets/footer.dart';
 
@@ -16,7 +14,7 @@ class EditContactScreen extends StatefulWidget {
 }
 
 class _EditContactScreenState extends State<EditContactScreen> {
-  late Contact contact;
+  Contact? contact;  // Change 'contact' to nullable
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _nameController;
   late TextEditingController _emailController;
@@ -26,17 +24,22 @@ class _EditContactScreenState extends State<EditContactScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    contact = ModalRoute.of(context)?.settings.arguments as Contact;
 
-    _nameController = TextEditingController(text: contact.nome);
-    _emailController = TextEditingController(text: contact.email);
-    _phoneController = TextEditingController(text: contact.telefone);
-    _birthdateController = TextEditingController(
-        text: contact.dataNascimento != null
-            ? "${contact.dataNascimento!.day.toString().padLeft(2, '0')}/"
-            "${contact.dataNascimento!.month.toString().padLeft(2, '0')}/"
-            "${contact.dataNascimento!.year}"
-            : "");
+    // Ensure that contact is only initialized once
+    if (contact == null) {
+      contact = ModalRoute.of(context)?.settings.arguments as Contact;
+
+      _nameController = TextEditingController(text: contact!.nome);
+      _emailController = TextEditingController(text: contact!.email);
+      _phoneController = TextEditingController(text: contact!.telefone);
+      _birthdateController = TextEditingController(
+          text: contact!.dataNascimento != null
+              ? "${contact!.dataNascimento!.day.toString().padLeft(2, '0')}/"
+              "${contact!.dataNascimento!.month.toString().padLeft(2, '0')}/"
+              "${contact!.dataNascimento!.year}"
+              : ""
+      );
+    }
   }
 
   @override
@@ -52,13 +55,12 @@ class _EditContactScreenState extends State<EditContactScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Theme
-            .of(context)
-            .colorScheme
-            .inversePrimary,
+        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: Text('Editar Contacto'),
       ),
-      body: SingleChildScrollView(
+      body: contact == null
+          ? Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Form(
@@ -75,9 +77,8 @@ class _EditContactScreenState extends State<EditContactScreen> {
                     }
                     return null;
                   },
-                  onSaved: (value) => contact.nome = value!,
+                  onSaved: (value) => contact!.nome = value!,
                 ),
-
                 TextFormField(
                   controller: _emailController,
                   decoration: InputDecoration(labelText: 'Email'),
@@ -91,9 +92,8 @@ class _EditContactScreenState extends State<EditContactScreen> {
                     }
                     return null;
                   },
-                  onSaved: (value) => contact.email = value!,
+                  onSaved: (value) => contact!.email = value!,
                 ),
-
                 TextFormField(
                   controller: _phoneController,
                   decoration: InputDecoration(labelText: 'Telefone'),
@@ -104,59 +104,71 @@ class _EditContactScreenState extends State<EditContactScreen> {
                     }
                     return null;
                   },
-                  onSaved: (value) => contact.telefone = value!,
+                  onSaved: (value) => contact!.telefone = value!,
                 ),
-
                 SizedBox(height: 16),
-
                 // Birthdate Field (DataNascimento)
                 TextFormField(
                   controller: _birthdateController,
-                  decoration: InputDecoration(labelText: 'Data de Nascimento'),
-                  readOnly: true, // Makes it non-editable directly
+                  decoration: InputDecoration(
+                    labelText: 'Data de nascimento',
+                    suffixIcon: Icon(Icons.calendar_today),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8.0),
+                      borderSide: BorderSide(
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onSurface
+                              .withOpacity(0.3)),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8.0),
+                      borderSide: BorderSide(
+                          color: Theme.of(context).colorScheme.primary),
+                    ),
+                  ),
+                  readOnly: true,
                   onTap: () async {
                     DateTime? pickedDate = await showDatePicker(
                       context: context,
-                      initialDate: contact.dataNascimento ?? DateTime.now(),
+                      initialDate: contact!.dataNascimento ?? DateTime.now(),
                       firstDate: DateTime(1900),
                       lastDate: DateTime.now(),
                     );
-                    if (pickedDate != null && pickedDate != contact.dataNascimento) {
+                    if (pickedDate != null &&
+                        pickedDate != contact!.dataNascimento) {
                       setState(() {
-                        contact.dataNascimento = pickedDate;
-                        _birthdateController.text = UtilsDate.formatDate(pickedDate);
+                        contact!.dataNascimento = pickedDate;
+                        _birthdateController.text =
+                            UtilsDate.formatDate(pickedDate);
                       });
                     }
                   },
                 ),
-
                 SizedBox(height: 16),
-
                 ElevatedButton(
                   onPressed: () async {
                     final pickedImage = await UtilsImage.pickImage(context);
                     if (pickedImage != null) {
                       setState(() {
-                        contact.imagem = pickedImage;
+                        contact!.imagem = pickedImage;
                       });
                     }
                   },
-                  child: Text(contact.imagem == null ? 'Escolher Imagem' : 'Alterar Imagem'),
+                  child: Text(contact!.imagem == null
+                      ? 'Escolher Imagem'
+                      : 'Alterar Imagem'),
                 ),
-
-                if (contact.imagem != null)
+                if (contact!.imagem != null)
                   ClipOval(
                     child: Image.file(
-                      contact.imagem!,
+                      contact!.imagem!,
                       height: 200,
                       width: 200,
                       fit: BoxFit.cover,
                     ),
                   ),
-
                 SizedBox(height: 16),
-
-                // Save Button
                 ElevatedButton(
                   onPressed: () {
                     if (_formKey.currentState!.validate()) {

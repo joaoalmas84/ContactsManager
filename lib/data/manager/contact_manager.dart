@@ -2,7 +2,14 @@ import '../models/contact.dart';
 import '../storage/file_storage.dart';
 
 class ContactManager {
+  static final ContactManager _instance = ContactManager._internal();
   List<Contact> _contacts = [];
+
+  ContactManager._internal();
+
+  factory ContactManager() {
+    return _instance;
+  }
 
   List<Contact> get contacts => _contacts;
 

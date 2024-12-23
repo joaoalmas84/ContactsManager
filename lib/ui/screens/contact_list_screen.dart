@@ -1,6 +1,6 @@
+import 'package:code/data/storage/shared_preferences_storage.dart';
 import 'package:code/ui/screens/add_contact_screen.dart';
 import 'package:flutter/material.dart';
-
 import '../../data/manager/contact_manager.dart';
 import '../../data/models/contact.dart';
 import '../widgets/footer.dart';
@@ -23,11 +23,6 @@ class _ContactListScreenState extends State<ContactListScreen> {
     setState(() {});
   }
 
-  Future<void> _editContact(int index, Contact updatedContact) async {
-    await _contactManager.editContact(index, updatedContact);
-    setState(() {});
-  }
-
   Future<void> _addContact(Contact contact) async {
     await _contactManager.addContact(contact);
     setState(() {});
@@ -42,17 +37,33 @@ class _ContactListScreenState extends State<ContactListScreen> {
   void initState() {
     super.initState();
     _contactManager = ContactManager();
-    _loadContacts();
   }
 
-  @override
+  Future<List<Contact>> _loadContactsSharedPreferences() async {
+    List<Contact> contacts = await ContactSharedPreferencesStorage.loadContacts();
+
+    // Filter contacts that have 'encontros' not null or empty
+    List<Contact> contactsWithMeetingPoints = contacts
+        .where((contact) => contact.encontros != null && contact.encontros!.isNotEmpty)
+        .toList();
+
+    return contacts;
+  }
+
+
+    @override
   Widget build(BuildContext context) {
+    _loadContacts();
+
+    List<Contact> contactsWithMeetingPoints = _loadContactsSharedPreferences() as List<Contact>;
+
+    if (contactsWithMeetingPoints.length > 10) {
+      contactsWithMeetingPoints = contactsWithMeetingPoints.take(10).toList();
+    }
+
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Theme
-            .of(context)
-            .colorScheme
-            .inversePrimary,
+        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: const Text('Contactos'),
         actions: [
           IconButton(
@@ -77,6 +88,72 @@ class _ContactListScreenState extends State<ContactListScreen> {
       ),
       body: Column(
         children: [
+          // Section for the last 10 contacts with saved meeting points (only visible if there are any)
+          if (contactsWithMeetingPoints.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Últimos Contactos com Pontos de Encontro',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.secondary,
+                    ),
+                  ),
+                  SizedBox(height: 8),
+                  // Display the contacts with meeting points
+                  ListView.builder(
+                    shrinkWrap: true, // Ensures the list takes only as much space as needed
+                    physics: NeverScrollableScrollPhysics(),
+                    itemCount: contactsWithMeetingPoints.length,
+                    itemBuilder: (context, index) {
+                      Contact contact = contactsWithMeetingPoints[index];
+                      return ListTile(
+                        leading: contact.imagem != null
+                            ? CircleAvatar(
+                          backgroundImage: FileImage(contact.imagem!),
+                        )
+                            : CircleAvatar(
+                          child: Text(contact.nome.isNotEmpty
+                              ? contact.nome[0].toUpperCase()
+                              : '?'),
+                        ),
+                        title: Text(contact.nome),
+                        subtitle: Text(contact.telefone),
+                        onTap: () async {
+                          await Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => ContactScreen(),
+                              settings: RouteSettings(
+                                arguments: {
+                                  'contact': contact,
+                                  'index': index,
+                                },
+                              ),
+                            ),
+                          );
+                        },
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ),
+
+          // Divider to visually separate the two lists, shown only if there are recent contacts with meeting points
+          if (contactsWithMeetingPoints.isNotEmpty)
+            Divider(
+              color: Colors.grey.shade400,  // Color for the divider
+              thickness: 1,  // Thickness of the divider line
+              indent: 16,  // Add some left margin to the divider
+              endIndent: 16,  // Add some right margin to the divider
+            ),
+
+          // Main contact list (always visible)
           Expanded(
             child: ListView.builder(
               padding: const EdgeInsets.only(bottom: 16.0),
@@ -100,19 +177,18 @@ class _ContactListScreenState extends State<ContactListScreen> {
                     onPressed: () => _deleteContact(index),
                   ),
                   onTap: () async {
-                    final updatedContact = await Navigator.push(
+                    await Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (context) => ContactScreen(),
                         settings: RouteSettings(
-                          arguments: contact,
+                          arguments: {
+                            'contact': contact,
+                            'index': index,
+                          },
                         ),
                       ),
                     );
-
-                    if (updatedContact != null && updatedContact is Contact) {
-                      _editContact(index, updatedContact);
-                    }
                   },
                 );
               },
