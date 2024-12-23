@@ -110,7 +110,7 @@ class _AddContactScreenState extends State<AddContactScreen> {
                       });
                     }
                   },
-                  child: Text(contact.imagem == null ? 'Escolher Imagem' : 'Imagem Selecionada'),
+                  child: Text(contact.imagem == null ? 'Escolher Imagem' : 'Alterar Imagem'),
                 ),
                 if (contact.imagem != null)
                   ClipOval(

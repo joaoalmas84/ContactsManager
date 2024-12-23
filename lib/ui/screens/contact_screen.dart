@@ -25,6 +25,7 @@ class _ContactScreenState extends State<ContactScreen> {
 
   Future<void> _editContact(int index, Contact updatedContact) async {
     await _contactManager.editContact(index, updatedContact);
+    await ContactSharedPreferencesStorage.addContact(updatedContact);
     setState(() {});
   }
 
@@ -176,7 +177,6 @@ class _ContactScreenState extends State<ContactScreen> {
                       right: 16.0,
                       child: FloatingActionButton(
                         onPressed: () async {
-                          // Navigate to AddMeetingPointScreen and wait for a new meeting point
                           final newMeetingPoint = await Navigator.push<MeetingPoint>(
                             context,
                             MaterialPageRoute(
@@ -185,12 +185,10 @@ class _ContactScreenState extends State<ContactScreen> {
                             ),
                           );
 
-                          // If a new meeting point was returned, add it to the contact's "encontros" list
                           if (newMeetingPoint != null) {
                             contact.encontros ??= [];  // If 'encontros' is null, initialize it as an empty list
                             contact.encontros!.add(newMeetingPoint);
-                            await ContactSharedPreferencesStorage.addContact(contact);
-                            _editContact(index, contact);
+                            await _editContact(index, contact);
                           }
                         },
                         backgroundColor: Theme.of(context).colorScheme.inversePrimary,

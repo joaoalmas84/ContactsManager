@@ -46,4 +46,18 @@ class Contact {
       encontros: encontrosList,
     );
   }
+
+  // Overriding equality operator (==)
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true; // Check if they are the same instance
+    if (other is! Contact) return false; // Ensure it's a Contact
+
+    return other.nome == nome &&
+        other.email == email &&
+        other.telefone == telefone &&
+        other.dataNascimento == dataNascimento &&
+        other.imagem == imagem &&
+        other.encontros == encontros;
+  }
 }

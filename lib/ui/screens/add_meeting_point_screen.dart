@@ -38,8 +38,6 @@ class _AddMeetingPointScreenState extends State<AddMeetingPointScreen> {
     }
   }
 
-
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -101,7 +99,6 @@ class _AddMeetingPointScreenState extends State<AddMeetingPointScreen> {
 
               SizedBox(height: 16),
 
-              // Date Picker "Selecionar Data" as TextFormField Styled Button
               TextFormField(
                 controller: TextEditingController(
                   text: _selectedDate != null

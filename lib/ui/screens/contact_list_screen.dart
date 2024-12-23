@@ -1,8 +1,8 @@
-import 'package:code/data/storage/shared_preferences_storage.dart';
 import 'package:code/ui/screens/add_contact_screen.dart';
 import 'package:flutter/material.dart';
 import '../../data/manager/contact_manager.dart';
 import '../../data/models/contact.dart';
+import '../../data/storage/shared_preferences_storage.dart';
 import '../widgets/footer.dart';
 import 'contact_screen.dart';
 
@@ -18,19 +18,19 @@ class ContactListScreen extends StatefulWidget {
 class _ContactListScreenState extends State<ContactListScreen> {
   late ContactManager _contactManager;
 
-  Future<void> _loadContacts() async {
+  Future<List<Contact>> _fetchManagerContacts() async {
     await _contactManager.loadContacts();
-    setState(() {});
+    return _contactManager.contacts;
   }
 
   Future<void> _addContact(Contact contact) async {
     await _contactManager.addContact(contact);
-    setState(() {});
+    setState(() {}); // Triggers the FutureBuilder to reload data
   }
 
   Future<void> _deleteContact(int index) async {
     await _contactManager.deleteContact(index);
-    setState(() {});
+    setState(() {}); // Triggers the FutureBuilder to reload data
   }
 
   @override
@@ -39,28 +39,8 @@ class _ContactListScreenState extends State<ContactListScreen> {
     _contactManager = ContactManager();
   }
 
-  Future<List<Contact>> _loadContactsSharedPreferences() async {
-    List<Contact> contacts = await ContactSharedPreferencesStorage.loadContacts();
-
-    // Filter contacts that have 'encontros' not null or empty
-    List<Contact> contactsWithMeetingPoints = contacts
-        .where((contact) => contact.encontros != null && contact.encontros!.isNotEmpty)
-        .toList();
-
-    return contacts;
-  }
-
-
-    @override
+  @override
   Widget build(BuildContext context) {
-    _loadContacts();
-
-    List<Contact> contactsWithMeetingPoints = _loadContactsSharedPreferences() as List<Contact>;
-
-    if (contactsWithMeetingPoints.length > 10) {
-      contactsWithMeetingPoints = contactsWithMeetingPoints.take(10).toList();
-    }
-
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
@@ -88,109 +68,162 @@ class _ContactListScreenState extends State<ContactListScreen> {
       ),
       body: Column(
         children: [
-          // Section for the last 10 contacts with saved meeting points (only visible if there are any)
-          if (contactsWithMeetingPoints.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Últimos Contactos com Pontos de Encontro',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(context).colorScheme.secondary,
-                    ),
-                  ),
-                  SizedBox(height: 8),
-                  // Display the contacts with meeting points
-                  ListView.builder(
-                    shrinkWrap: true, // Ensures the list takes only as much space as needed
-                    physics: NeverScrollableScrollPhysics(),
-                    itemCount: contactsWithMeetingPoints.length,
-                    itemBuilder: (context, index) {
-                      Contact contact = contactsWithMeetingPoints[index];
-                      return ListTile(
-                        leading: contact.imagem != null
-                            ? CircleAvatar(
-                          backgroundImage: FileImage(contact.imagem!),
-                        )
-                            : CircleAvatar(
-                          child: Text(contact.nome.isNotEmpty
-                              ? contact.nome[0].toUpperCase()
-                              : '?'),
-                        ),
-                        title: Text(contact.nome),
-                        subtitle: Text(contact.telefone),
-                        onTap: () async {
-                          await Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => ContactScreen(),
-                              settings: RouteSettings(
-                                arguments: {
-                                  'contact': contact,
-                                  'index': index,
-                                },
-                              ),
-                            ),
-                          );
-                        },
-                      );
-                    },
-                  ),
-                ],
-              ),
-            ),
-
-          // Divider to visually separate the two lists, shown only if there are recent contacts with meeting points
-          if (contactsWithMeetingPoints.isNotEmpty)
-            Divider(
-              color: Colors.grey.shade400,  // Color for the divider
-              thickness: 1,  // Thickness of the divider line
-              indent: 16,  // Add some left margin to the divider
-              endIndent: 16,  // Add some right margin to the divider
-            ),
-
-          // Main contact list (always visible)
+          // Removed the SharedPreferences list part completely
           Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.only(bottom: 16.0),
-              itemCount: _contactManager.contacts.length,
-              itemBuilder: (context, index) {
-                Contact contact = _contactManager.contacts[index];
-                return ListTile(
-                  leading: contact.imagem != null
-                      ? CircleAvatar(
-                    backgroundImage: FileImage(contact.imagem!),
-                  )
-                      : CircleAvatar(
-                    child: Text(contact.nome.isNotEmpty
-                        ? contact.nome[0].toUpperCase()
-                        : '?'),
-                  ),
-                  title: Text(contact.nome),
-                  subtitle: Text(contact.telefone),
-                  trailing: IconButton(
-                    icon: const Icon(Icons.delete),
-                    onPressed: () => _deleteContact(index),
-                  ),
-                  onTap: () async {
-                    await Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => ContactScreen(),
-                        settings: RouteSettings(
-                          arguments: {
-                            'contact': contact,
-                            'index': index,
+            flex: 1,
+            child: FutureBuilder<List<Contact>>(
+              future: ContactSharedPreferencesStorage.loadContacts(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                } else if (snapshot.hasError) {
+                  return Center(
+                    child: Text('Error loading stored contacts: ${snapshot.error}'),
+                  );
+                } else if (snapshot.hasData) {
+                  final sharedContacts = snapshot.data!;
+                  if (sharedContacts.isEmpty) {
+                    return const Center(child: Text('No stored contacts found.'));
+                  }
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Text(
+                          'Stored Contacts (SharedPreferences)',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Theme.of(context).colorScheme.secondary,
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                        child: ListView.builder(
+                          itemCount: sharedContacts.length,
+                          itemBuilder: (context, index) {
+                            final contact = sharedContacts[index];
+                            return ListTile(
+                              leading: contact.imagem != null
+                                  ? CircleAvatar(
+                                backgroundImage: FileImage(contact.imagem!),
+                              )
+                                  : CircleAvatar(
+                                child: Text(contact.nome.isNotEmpty
+                                    ? contact.nome[0].toUpperCase()
+                                    : '?'),
+                              ),
+                              title: Text(contact.nome),
+                              subtitle: Text(contact.telefone),
+                              onTap: () async {
+                                await Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => ContactScreen(),
+                                    settings: RouteSettings(
+                                      arguments: {
+                                        'contact': contact,
+                                        'index': index,
+                                      },
+                                    ),
+                                  ),
+                                );
+                                setState(() {});
+                              },
+                            );
                           },
                         ),
                       ),
-                    );
-                  },
-                );
+                    ],
+                  );
+                } else {
+                  return const Center(child: Text('No contacts available.'));
+                }
+              },
+            ),
+          ),
+
+          Divider(
+            color: Colors.grey.shade400,
+            thickness: 1,
+            indent: 16,
+            endIndent: 16,
+          ),
+
+          // List of contacts from ContactManager
+          Expanded(
+            flex: 2,
+            child: FutureBuilder<List<Contact>>(
+              future: _fetchManagerContacts(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                } else if (snapshot.hasError) {
+                  return Center(
+                    child: Text('Error loading contacts: ${snapshot.error}'),
+                  );
+                } else if (snapshot.hasData) {
+                  final managerContacts = snapshot.data!;
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Text(
+                          'Contacts from ContactManager',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Theme.of(context).colorScheme.secondary,
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                        child: ListView.builder(
+                          itemCount: managerContacts.length,
+                          itemBuilder: (context, index) {
+                            final contact = managerContacts[index];
+                            return ListTile(
+                              leading: contact.imagem != null
+                                  ? CircleAvatar(
+                                backgroundImage: FileImage(contact.imagem!),
+                              )
+                                  : CircleAvatar(
+                                child: Text(contact.nome.isNotEmpty
+                                    ? contact.nome[0].toUpperCase()
+                                    : '?'),
+                              ),
+                              title: Text(contact.nome),
+                              subtitle: Text(contact.telefone),
+                              trailing: IconButton(
+                                icon: const Icon(Icons.delete),
+                                onPressed: () => _deleteContact(index),
+                              ),
+                              onTap: () async {
+                                await Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => ContactScreen(),
+                                    settings: RouteSettings(
+                                      arguments: {
+                                        'contact': contact,
+                                        'index': index,
+                                      },
+                                    ),
+                                  ),
+                                );
+                                setState(() {});
+                              },
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  );
+                } else {
+                  return const Center(child: Text('No contacts available.'));
+                }
               },
             ),
           ),
