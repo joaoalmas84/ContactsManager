@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../../data/models/contact.dart';
+import 'package:geolocator/geolocator.dart';
 import '../../data/models/meeting_point.dart';
+import '../widgets/footer.dart';
 
 class AddMeetingPointScreen extends StatefulWidget {
   const AddMeetingPointScreen({super.key});
@@ -20,6 +21,39 @@ class _AddMeetingPointScreenState extends State<AddMeetingPointScreen> {
   final _formKey = GlobalKey<FormState>();
 
   bool _hasSubmitted = false;
+
+  Future<void> _getCurrentLocation() async {
+    try {
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Please enable location services.')),
+        );
+        return;
+      }
+
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Location permission denied.')),
+          );
+          return;
+        }
+      }
+
+      Position position = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
+
+      _latitudeController.text = position.latitude.toString();
+      _longitudeController.text = position.longitude.toString();
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to get location: $e')),
+      );
+    }
+    setState(() {});
+  }
 
   void _addMeetingPoint() {
     if (_formKey.currentState?.validate() == true) {
@@ -42,8 +76,15 @@ class _AddMeetingPointScreenState extends State<AddMeetingPointScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Adicionar Ponto de Encontro'),
+        title: Text('Novo Ponto de Encontro'),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+        actions: [
+          IconButton(
+            icon: Icon(Icons.my_location),
+            onPressed: _getCurrentLocation,
+          ),
+          SizedBox(width: 25.0),
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
@@ -56,10 +97,12 @@ class _AddMeetingPointScreenState extends State<AddMeetingPointScreen> {
 
               TextFormField(
                 controller: _latitudeController,
-                decoration: InputDecoration(labelText: 'Latitude'),
-                keyboardType: TextInputType.number,  // This allows minus sign (-) and numbers.
+                decoration: InputDecoration(
+                  labelText: 'Latitude',
+                ),
+                keyboardType: TextInputType.number,
                 inputFormatters: [
-                  FilteringTextInputFormatter.allow(RegExp(r'[-0-9.]')),  // Allow negative sign, numbers, and decimal point
+                  FilteringTextInputFormatter.allow(RegExp(r'[-0-9.]')),
                 ],
                 validator: (value) {
                   if (_hasSubmitted) {
@@ -75,13 +118,15 @@ class _AddMeetingPointScreenState extends State<AddMeetingPointScreen> {
               ),
               SizedBox(height: 16),
 
-// Longitude Input
+              // Longitude Input
               TextFormField(
                 controller: _longitudeController,
-                decoration: InputDecoration(labelText: 'Longitude'),
-                keyboardType: TextInputType.number,  // This allows minus sign (-) and numbers.
+                decoration: InputDecoration(
+                  labelText: 'Longitude',
+                ),
+                keyboardType: TextInputType.number,
                 inputFormatters: [
-                  FilteringTextInputFormatter.allow(RegExp(r'[-0-9.]')),  // Allow negative sign, numbers, and decimal point
+                  FilteringTextInputFormatter.allow(RegExp(r'[-0-9.]')),
                 ],
                 validator: (value) {
                   if (_hasSubmitted) {
@@ -95,7 +140,6 @@ class _AddMeetingPointScreenState extends State<AddMeetingPointScreen> {
                   return null;
                 },
               ),
-
 
               SizedBox(height: 16),
 
@@ -143,7 +187,7 @@ class _AddMeetingPointScreenState extends State<AddMeetingPointScreen> {
                 ),
               SizedBox(height: 16),
 
-              // Add Meeting Point Button with minimal width
+              // Add Meeting Point Button
               Center(
                 child: ElevatedButton(
                   onPressed: () {
@@ -154,21 +198,14 @@ class _AddMeetingPointScreenState extends State<AddMeetingPointScreen> {
                       _addMeetingPoint();
                     }
                   },
-                  style: ElevatedButton.styleFrom(
-                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8), // minimal padding
-                    minimumSize: Size.zero, // min size should be based on the content
-                  ),
-                  child: Text(
-                    'Adicionar',
-                    style: TextStyle(fontSize: 16), // Set font size to 16 to match the rest of the screen
-                  ),
+                  child: Text('Adicionar'),
                 ),
-              )
-
+              ),
             ],
           ),
         ),
       ),
+      bottomNavigationBar: Footer(),
     );
   }
 }

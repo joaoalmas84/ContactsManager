@@ -2,7 +2,6 @@ import 'package:code/ui/screens/add_contact_screen.dart';
 import 'package:flutter/material.dart';
 import '../../data/manager/contact_manager.dart';
 import '../../data/models/contact.dart';
-import '../../data/storage/shared_preferences_storage.dart';
 import '../widgets/footer.dart';
 import 'contact_screen.dart';
 
@@ -18,19 +17,14 @@ class ContactListScreen extends StatefulWidget {
 class _ContactListScreenState extends State<ContactListScreen> {
   late ContactManager _contactManager;
 
-  Future<List<Contact>> _fetchManagerContacts() async {
-    await _contactManager.loadContacts();
-    return _contactManager.contacts;
-  }
-
   Future<void> _addContact(Contact contact) async {
     await _contactManager.addContact(contact);
-    setState(() {}); // Triggers the FutureBuilder to reload data
+    setState(() {});
   }
 
   Future<void> _deleteContact(int index) async {
     await _contactManager.deleteContact(index);
-    setState(() {}); // Triggers the FutureBuilder to reload data
+    setState(() {});
   }
 
   @override
@@ -53,9 +47,7 @@ class _ContactListScreenState extends State<ContactListScreen> {
               final newContact = await Navigator.of(context).push(
                 MaterialPageRoute(
                   builder: (context) => AddContactScreen(),
-                  settings: RouteSettings(
-                    arguments: _contactManager.contacts,
-                  ),
+                  settings: RouteSettings(),
                 ),
               );
               if (newContact != null) {
@@ -66,170 +58,165 @@ class _ContactListScreenState extends State<ContactListScreen> {
           SizedBox(width: 25.0),
         ],
       ),
-      body: Column(
-        children: [
-          // Removed the SharedPreferences list part completely
-          Expanded(
-            flex: 1,
-            child: FutureBuilder<List<Contact>>(
-              future: ContactSharedPreferencesStorage.loadContacts(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                } else if (snapshot.hasError) {
-                  return Center(
-                    child: Text('Error loading stored contacts: ${snapshot.error}'),
-                  );
-                } else if (snapshot.hasData) {
-                  final sharedContacts = snapshot.data!;
-                  if (sharedContacts.isEmpty) {
-                    return const Center(child: Text('No stored contacts found.'));
-                  }
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Text(
-                          'Stored Contacts (SharedPreferences)',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Theme.of(context).colorScheme.secondary,
-                          ),
-                        ),
-                      ),
-                      Expanded(
-                        child: ListView.builder(
-                          itemCount: sharedContacts.length,
-                          itemBuilder: (context, index) {
-                            final contact = sharedContacts[index];
-                            return ListTile(
-                              leading: contact.imagem != null
-                                  ? CircleAvatar(
-                                backgroundImage: FileImage(contact.imagem!),
-                              )
-                                  : CircleAvatar(
-                                child: Text(contact.nome.isNotEmpty
-                                    ? contact.nome[0].toUpperCase()
-                                    : '?'),
-                              ),
-                              title: Text(contact.nome),
-                              subtitle: Text(contact.telefone),
-                              onTap: () async {
-                                await Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => ContactScreen(),
-                                    settings: RouteSettings(
-                                      arguments: {
-                                        'contact': contact,
-                                        'index': index,
-                                      },
-                                    ),
-                                  ),
-                                );
-                                setState(() {});
-                              },
-                            );
-                          },
-                        ),
-                      ),
-                    ],
-                  );
-                } else {
-                  return const Center(child: Text('No contacts available.'));
-                }
-              },
-            ),
-          ),
+      body: FutureBuilder<List<Contact>>(
+        future: _contactManager.loadContacts(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return Center(child: CircularProgressIndicator());
+          } else if (snapshot.hasError) {
+            return Center(child: Text('Erro ao carregar contactos: ${snapshot.error}'));
+          } else if (snapshot.hasData && snapshot.data!.isNotEmpty) {
+            final allContacts = snapshot.data!;
 
-          Divider(
-            color: Colors.grey.shade400,
-            thickness: 1,
-            indent: 16,
-            endIndent: 16,
-          ),
-
-          // List of contacts from ContactManager
-          Expanded(
-            flex: 2,
-            child: FutureBuilder<List<Contact>>(
-              future: _fetchManagerContacts(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                } else if (snapshot.hasError) {
-                  return Center(
-                    child: Text('Error loading contacts: ${snapshot.error}'),
-                  );
-                } else if (snapshot.hasData) {
-                  final managerContacts = snapshot.data!;
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Text(
-                          'Contacts from ContactManager',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Theme.of(context).colorScheme.secondary,
+            return FutureBuilder<List<Contact>>(
+              future: _contactManager.loadRecentContacts(),
+              builder: (context, recentSnapshot) {
+                return Column(
+                  children: [
+                    Expanded(
+                      flex: 1,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Text(
+                              'Contactos recentes',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Theme.of(context).colorScheme.secondary,
+                              ),
+                            ),
                           ),
-                        ),
-                      ),
-                      Expanded(
-                        child: ListView.builder(
-                          itemCount: managerContacts.length,
-                          itemBuilder: (context, index) {
-                            final contact = managerContacts[index];
-                            return ListTile(
-                              leading: contact.imagem != null
-                                  ? CircleAvatar(
-                                backgroundImage: FileImage(contact.imagem!),
-                              )
-                                  : CircleAvatar(
-                                child: Text(contact.nome.isNotEmpty
-                                    ? contact.nome[0].toUpperCase()
-                                    : '?'),
+                          if (recentSnapshot.connectionState == ConnectionState.waiting) ...[
+                            Expanded(
+                              child: Center(child: CircularProgressIndicator()),
+                            ),
+                          ] else if (recentSnapshot.hasError) ...[
+                            Expanded(
+                              child: Center(
+                                child: Text(
+                                  'Erro ao carregar contactos recentes: ${recentSnapshot.error}',
+                                  textAlign: TextAlign.center,
+                                ),
                               ),
-                              title: Text(contact.nome),
-                              subtitle: Text(contact.telefone),
-                              trailing: IconButton(
-                                icon: const Icon(Icons.delete),
-                                onPressed: () => _deleteContact(index),
-                              ),
-                              onTap: () async {
-                                await Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => ContactScreen(),
-                                    settings: RouteSettings(
-                                      arguments: {
-                                        'contact': contact,
-                                        'index': index,
-                                      },
+                            ),
+                          ] else if (recentSnapshot.hasData && recentSnapshot.data!.isNotEmpty) ...[
+                            Expanded(
+                              child: ListView.builder(
+                                itemCount: recentSnapshot.data!.length,
+                                itemBuilder: (context, index) {
+                                  final contact = recentSnapshot.data![index];
+                                  return ListTile(
+                                    leading: contact.imagem != null
+                                        ? CircleAvatar(
+                                      backgroundImage: FileImage(contact.imagem!),
+                                    )
+                                        : CircleAvatar(
+                                      child: Text(
+                                        contact.nome.isNotEmpty
+                                            ? contact.nome[0].toUpperCase()
+                                            : '?',
+                                      ),
                                     ),
-                                  ),
-                                );
-                                setState(() {});
-                              },
-                            );
-                          },
-                        ),
+                                    title: Text(contact.nome),
+                                    subtitle: Text(contact.telefone),
+                                    onTap: () async {
+                                      await Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => ContactScreen(),
+                                          settings: RouteSettings(
+                                            arguments: {
+                                              'contact': contact,
+                                              'index': _contactManager.getIndex(contact),
+                                            },
+                                          ),
+                                        ),
+                                      );
+                                      setState(() {});
+                                    },
+                                  );
+                                },
+                              ),
+                            ),
+                          ] else ...[
+                            Expanded(
+                              child: Center(
+                                child: const Text(
+                                  'Sem contactos recentes',
+                                  textAlign: TextAlign.center,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
-                    ],
-                  );
-                } else {
-                  return const Center(child: Text('No contacts available.'));
-                }
+                    ),
+
+                    Divider(
+                      color: Colors.grey.shade400,
+                      thickness: 1,
+                      indent: 16,
+                      endIndent: 16,
+                    ),
+
+                    // All Contacts Section
+                    Expanded(
+                      flex: 2,
+                      child: ListView.builder(
+                        itemCount: allContacts.length,
+                        itemBuilder: (context, index) {
+                          final contact = allContacts[index];
+                          return ListTile(
+                            leading: contact.imagem != null
+                                ? CircleAvatar(
+                              backgroundImage: FileImage(contact.imagem!),
+                            )
+                                : CircleAvatar(
+                              child: Text(
+                                contact.nome.isNotEmpty
+                                    ? contact.nome[0].toUpperCase()
+                                    : '?',
+                              ),
+                            ),
+                            title: Text(contact.nome),
+                            subtitle: Text(contact.telefone),
+                            trailing: IconButton(
+                              icon: const Icon(Icons.delete),
+                              onPressed: () => _deleteContact(index),
+                            ),
+                            onTap: () async {
+                              await Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => ContactScreen(),
+                                  settings: RouteSettings(
+                                    arguments: {
+                                      'contact': contact,
+                                      'index': index,
+                                    },
+                                  ),
+                                ),
+                              );
+                              setState(() {});
+                            },
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                );
               },
-            ),
-          ),
-        ],
+            );
+          } else {
+            return Center(child: Text('Sem contactos registados'));
+          }
+        },
       ),
       bottomNavigationBar: Footer(),
     );
   }
+
 }

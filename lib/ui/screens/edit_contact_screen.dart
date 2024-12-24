@@ -14,7 +14,7 @@ class EditContactScreen extends StatefulWidget {
 }
 
 class _EditContactScreenState extends State<EditContactScreen> {
-  Contact? contact;  // Change 'contact' to nullable
+  Contact? contact;
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _nameController;
   late TextEditingController _emailController;

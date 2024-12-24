@@ -55,9 +55,6 @@ class Contact {
 
     return other.nome == nome &&
         other.email == email &&
-        other.telefone == telefone &&
-        other.dataNascimento == dataNascimento &&
-        other.imagem == imagem &&
-        other.encontros == encontros;
+        other.telefone == telefone;
   }
 }

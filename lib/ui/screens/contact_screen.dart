@@ -6,7 +6,6 @@ import 'package:latlong2/latlong.dart';
 import '../../data/manager/contact_manager.dart';
 import '../../data/models/contact.dart';
 import '../../data/models/meeting_point.dart';
-import '../../data/storage/shared_preferences_storage.dart';
 import '../widgets/footer.dart';
 import 'add_meeting_point_screen.dart';
 import 'edit_contact_screen.dart';
@@ -23,12 +22,6 @@ class ContactScreen extends StatefulWidget {
 class _ContactScreenState extends State<ContactScreen> {
   late ContactManager _contactManager;
 
-  Future<void> _editContact(int index, Contact updatedContact) async {
-    await _contactManager.editContact(index, updatedContact);
-    await ContactSharedPreferencesStorage.addContact(updatedContact);
-    setState(() {});
-  }
-
   @override
   void initState() {
     super.initState();
@@ -38,8 +31,8 @@ class _ContactScreenState extends State<ContactScreen> {
   @override
   Widget build(BuildContext context) {
     final arguments = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
-    final int index = arguments['index'];
     final Contact contact = arguments['contact'];
+    final int index = arguments['index'];
 
     return Scaffold(
       appBar: AppBar(
@@ -136,7 +129,7 @@ class _ContactScreenState extends State<ContactScreen> {
                       );
 
                       if (updatedContact != null && updatedContact is Contact) {
-                        _editContact(index, updatedContact);
+                        _contactManager.editContact(index, updatedContact);
                       }
                     },
                     icon: Icon(Icons.edit),
@@ -153,8 +146,8 @@ class _ContactScreenState extends State<ContactScreen> {
                   children: [
                     FlutterMap(
                       options: MapOptions(
-                        center: LatLng(39.5, -8.0), // Centering map around Portugal
-                        zoom: 6.0, // A zoom level appropriate for viewing the entire country
+                        center: LatLng(39.5, -8.0),
+                        zoom: 6.0,
                       ),
                       children: [
                         TileLayer(
@@ -186,9 +179,9 @@ class _ContactScreenState extends State<ContactScreen> {
                           );
 
                           if (newMeetingPoint != null) {
-                            contact.encontros ??= [];  // If 'encontros' is null, initialize it as an empty list
+                            contact.encontros ??= [];
                             contact.encontros!.add(newMeetingPoint);
-                            await _editContact(index, contact);
+                            await _contactManager.addMetingPoint(index, contact);
                           }
                         },
                         backgroundColor: Theme.of(context).colorScheme.inversePrimary,

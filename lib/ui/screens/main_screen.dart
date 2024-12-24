@@ -21,7 +21,7 @@ class _MainScreenState extends State<MainScreen> {
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: Text('AMOV 2024/25'),
       ),
-      body: SingleChildScrollView(  // Wrap the content with SingleChildScrollView
+      body: SingleChildScrollView(
         child: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
