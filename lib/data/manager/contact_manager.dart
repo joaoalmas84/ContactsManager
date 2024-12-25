@@ -1,5 +1,4 @@
 import 'package:collection/collection.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../models/contact.dart';
 import '../storage/file_storage.dart';
 import '../storage/shared_preferences_storage.dart';
@@ -10,7 +9,7 @@ class ContactManager {
   final ContactSharedPreferencesStorage _sharedPreferencesStorage = ContactSharedPreferencesStorage();
 
   List<Contact> _contacts = [];
-  QueueList<int> _recentContactsIndexes = QueueList<int>();
+  QueueList<int> _recentContactsIds = QueueList<int>();
 
   ContactManager._internal();
 
@@ -47,41 +46,42 @@ class ContactManager {
   // ---------------------- SharedPreferences Storage --------------------------
 
   Future<List<Contact>> loadRecentContacts() async {
-    _recentContactsIndexes = await _sharedPreferencesStorage.load();
+    _recentContactsIds = await _sharedPreferencesStorage.load();
 
-    List<Contact> orderedContacts = _recentContactsIndexes
-        .map((index) => _contacts[index])
+    List<Contact> orderedContacts = _recentContactsIds
+        .where((id) => _contacts.any((contact) => contact.id == id))
+        .map((id) => _contacts.firstWhere((contact) => contact.id == id))
         .toList();
 
     return orderedContacts;
   }
 
-  Future<void> addRecentContact(int index) async {
-    _recentContactsIndexes.remove(index);
+  Future<void> addRecentContact(int id) async {
+    _recentContactsIds.remove(id);
 
-    if (_recentContactsIndexes.length + 1 > 10) {
-      _recentContactsIndexes.removeLast();
+    if (_recentContactsIds.length + 1 > 10) {
+      _recentContactsIds.removeLast();
     }
 
-    _recentContactsIndexes.addFirst(index);
+    _recentContactsIds.addFirst(id);
 
-    await _sharedPreferencesStorage.save(_recentContactsIndexes);
+    await _sharedPreferencesStorage.save(_recentContactsIds);
   }
 
   // ------------------------------ Both ---------------------------------------
 
   Future<void> deleteContact(int index) async {
+    _recentContactsIds.removeWhere((existingId) => existingId == _contacts[index].id);
+    await _sharedPreferencesStorage.save(_recentContactsIds);
+
     _contacts.removeAt(index);
     await _fileStorage.save(_contacts);
-
-    _recentContactsIndexes.remove(index);
-    await _sharedPreferencesStorage.save(_recentContactsIndexes);
   }
 
   Future<void> addMetingPoint(int index, Contact updatedContact) async {
     _contacts[index] = updatedContact;
     await _fileStorage.save(_contacts);
-    await addRecentContact(index);
+    await addRecentContact(_contacts[index].id);
   }
 
 }

@@ -2,6 +2,9 @@ import 'dart:io';
 import 'package:code/data/models/meeting_point.dart';
 
 class Contact {
+  static int _lastId = 0;
+
+  int id;
   String nome;
   String email;
   String telefone;
@@ -16,10 +19,11 @@ class Contact {
     this.dataNascimento,
     this.imagem,
     this.encontros
-  });
+  }) : id = ++_lastId;
 
   Map<String, dynamic> toJson() {
     return {
+      'id': id,
       'nome': nome,
       'email': email,
       'telefone': telefone,
@@ -44,17 +48,6 @@ class Contact {
           ? File(json['imagem'])
           : null,
       encontros: encontrosList,
-    );
-  }
-
-  // Overriding equality operator (==)
-  @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) return true; // Check if they are the same instance
-    if (other is! Contact) return false; // Ensure it's a Contact
-
-    return other.nome == nome &&
-        other.email == email &&
-        other.telefone == telefone;
+    )..id = json['id'] ?? ++_lastId;
   }
 }
