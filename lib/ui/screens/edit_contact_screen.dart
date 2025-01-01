@@ -25,7 +25,6 @@ class _EditContactScreenState extends State<EditContactScreen> {
   void didChangeDependencies() {
     super.didChangeDependencies();
 
-    // Ensure that contact is only initialized once
     if (contact == null) {
       contact = ModalRoute.of(context)?.settings.arguments as Contact;
 
@@ -107,7 +106,7 @@ class _EditContactScreenState extends State<EditContactScreen> {
                   onSaved: (value) => contact!.telefone = value!,
                 ),
                 SizedBox(height: 16),
-                // Birthdate Field (DataNascimento)
+
                 TextFormField(
                   controller: _birthdateController,
                   decoration: InputDecoration(

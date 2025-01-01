@@ -162,7 +162,6 @@ class _ContactListScreenState extends State<ContactListScreen> {
                       endIndent: 16,
                     ),
 
-                    // All Contacts Section
                     Expanded(
                       flex: 2,
                       child: ListView.builder(

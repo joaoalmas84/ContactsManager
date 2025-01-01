@@ -126,7 +126,7 @@ class _AddContactScreenState extends State<AddContactScreen> {
                   onPressed: () async {
                     if (_formKey.currentState!.validate()) {
                       _formKey.currentState!.save();
-                      Navigator.pop(context, contact); // Return the new contact
+                      Navigator.pop(context, contact);
                     }
                   },
                   child: Text('Guardar'),

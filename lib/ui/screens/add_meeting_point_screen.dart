@@ -116,9 +116,9 @@ class _AddMeetingPointScreenState extends State<AddMeetingPointScreen> {
                   return null;
                 },
               ),
+
               SizedBox(height: 16),
 
-              // Longitude Input
               TextFormField(
                 controller: _longitudeController,
                 decoration: InputDecoration(
@@ -185,14 +185,14 @@ class _AddMeetingPointScreenState extends State<AddMeetingPointScreen> {
                     style: TextStyle(color: Colors.red, fontSize: 12),
                   ),
                 ),
+
               SizedBox(height: 16),
 
-              // Add Meeting Point Button
               Center(
                 child: ElevatedButton(
                   onPressed: () {
                     setState(() {
-                      _hasSubmitted = true; // Set this flag to true to show error messages
+                      _hasSubmitted = true;
                     });
                     if (_formKey.currentState?.validate() == true) {
                       _addMeetingPoint();
