@@ -23,11 +23,13 @@ class _AddMeetingPointScreenState extends State<AddMeetingPointScreen> {
   bool _hasSubmitted = false;
 
   Future<void> _getCurrentLocation() async {
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+
     try {
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Please enable location services.')),
+        scaffoldMessenger.showSnackBar(
+          const SnackBar(content: Text('Please enable location services.')),
         );
         return;
       }
@@ -36,8 +38,8 @@ class _AddMeetingPointScreenState extends State<AddMeetingPointScreen> {
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
         if (permission == LocationPermission.denied) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Location permission denied.')),
+          scaffoldMessenger.showSnackBar(
+            const SnackBar(content: Text('Location permission denied.')),
           );
           return;
         }
@@ -45,15 +47,17 @@ class _AddMeetingPointScreenState extends State<AddMeetingPointScreen> {
 
       Position position = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
 
-      _latitudeController.text = position.latitude.toString();
-      _longitudeController.text = position.longitude.toString();
+      setState(() {
+        _latitudeController.text = position.latitude.toString();
+        _longitudeController.text = position.longitude.toString();
+      });
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
+      scaffoldMessenger.showSnackBar(
         SnackBar(content: Text('Failed to get location: $e')),
       );
     }
-    setState(() {});
   }
+
 
   void _addMeetingPoint() {
     if (_formKey.currentState?.validate() == true) {
@@ -146,7 +150,7 @@ class _AddMeetingPointScreenState extends State<AddMeetingPointScreen> {
               TextFormField(
                 controller: TextEditingController(
                   text: _selectedDate != null
-                      ? 'Alterar Data: ${_selectedDate!.toLocal().toString().split(' ')[0]}'
+                      ? 'Data Selecionada: ${_selectedDate!.toLocal().toString().split(' ')[0]}'
                       : 'Selecionar Data',
                 ),
                 readOnly: true,
@@ -155,7 +159,7 @@ class _AddMeetingPointScreenState extends State<AddMeetingPointScreen> {
                   suffixIcon: Icon(Icons.calendar_today),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8.0),
-                    borderSide: BorderSide(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3)),
+                    borderSide: BorderSide(color: Theme.of(context).colorScheme.onSurface),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8.0),

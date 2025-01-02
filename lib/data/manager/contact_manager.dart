@@ -1,4 +1,5 @@
 import 'package:collection/collection.dart';
+
 import '../models/contact.dart';
 import '../storage/file_storage.dart';
 import '../storage/shared_preferences_storage.dart';

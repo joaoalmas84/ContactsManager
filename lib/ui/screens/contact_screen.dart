@@ -146,8 +146,8 @@ class _ContactScreenState extends State<ContactScreen> {
                   children: [
                     FlutterMap(
                       options: MapOptions(
-                        center: LatLng(39.5, -8.0),
-                        zoom: 6.0,
+                        initialCenter: LatLng(39.5, -8.0),
+                        initialZoom: 6.0,
                       ),
                       children: [
                         TileLayer(
@@ -158,11 +158,17 @@ class _ContactScreenState extends State<ContactScreen> {
                           markers: contact.encontros
                               ?.map<Marker>((e) => Marker(
                             point: LatLng(e.lat, e.long),
-                            builder: (ctx) => const Icon(Icons.location_pin, color: Colors.red),
+                            width: 40.0,
+                            height: 40.0,
+                            child: const Icon(
+                              Icons.location_pin,
+                              color: Colors.red,
+                            ),
                           ))
                               .toList() ??
                               [],
                         ),
+
                       ],
                     ),
                     Positioned(
